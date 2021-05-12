@@ -40,12 +40,16 @@ time {
 
 ## nt本地库的下载及构建
 
+构建代码：
+
 ```bash
 db=$PWD
+
 ## 1.环境配置
-# blast, numpy, pandas, matplotlib, pickle 安装
+# blast, numpy, pandas, matplotlib, pickle ... 安装
+# 尽量使用官方源，一般具有更新的环境版本不易出现问题。访问缓慢可借助 proxychains4 解决。
 conda deactivate; conda deactivate;
-conda create  -y  -n nt  -c bioconda  blast numpy pandas matplotlib
+conda create  -y  -n nt  -c bioconda  blast libgcc numpy pandas matplotlib seqtk
 # blast版本地址：<https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/>
 # blast使用手册《BLAST Command Line Applications User Manual》
 
@@ -71,8 +75,7 @@ cd -
 
 ## 3. 构建搜索ID用的pydb, map_taxid.py中的pydb路径需要自己指定
 conda activate nt
-# blast
-# 略，需要格式参数-outfmt 6
+# blast 略，需要格式参数-outfmt 6
 sed -i "s#/home/chenjun/dataBase/blast_db_FASTA#$db#"  map_taxid.py 
 python3  map_taxid.py  test/test.blast
 ```
@@ -80,16 +83,36 @@ python3  map_taxid.py  test/test.blast
 
 ## Demo：
 
+分步执行：
+
 ```bash
 db=/home/chenjun/dataBase/blast_db_FASTA/nt
 
+conda activate nt
+fastq=test.fq.gz
+num=1000
 fasta=test.fa
 out=test.blast
-# time blastn -query $fasta -out $out -outfmt 6 -db $db -num_threads 10 -evalue 1e-5  -qcov_hsp_perc 50.0 -num_alignments 5
 
+# 筛选1000 条 reads 准备进行 blast nt 比对
+./get_1000reads.sh 
+seqtk sample -s 100 $fastq ${num}  >${num}reads_${fastq_name}
+cat ${num}reads_${fastq_name} | awk '{if(NR%4 == 1){print ">" substr($0, 2)}}{if(NR%4 == 2){print}}' >$fasta
+
+# blast执行
+time blastn -query $fasta -out $out -outfmt 6 -db $db -num_threads 10 -evalue 1e-5  -qcov_hsp_perc 50.0 -num_alignments 5
 # blast结果的物种查找
-time ./map_taxid.py $out
+time python3 map_taxid.py $out
 ```
+
+一步执行：
+
+```bash
+conda activate nt
+./fq-nt-check.sh  ./test.fq.gz
+```
+
+饼图结果：
 
 ![](test/test.blast.pie.png)
 
