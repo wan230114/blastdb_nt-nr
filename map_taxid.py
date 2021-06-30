@@ -6,7 +6,7 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-05-10, 11:07:39
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-05-12, 23:36:25
+# @ Last Modified: 2021-06-29, 17:25:07
 #############################################
 
 ##########################################################################################
@@ -104,6 +104,7 @@ def find_spe(IDs):
     # L_time = []
     # print("find index ok")
     import datetime
+    t00 = datetime.datetime.now()
     for kw in db_select:
         print(f"search in {kw}", end="  ")
         t0 = datetime.datetime.now()
@@ -112,7 +113,12 @@ def find_spe(IDs):
         print(t1 - t0)
         # L_time.append(t1 - t0)
         for ID in db_select[kw]:
-            res_dict[ID] = d1[int(db_tmp[ID])]
+            if ID in db_tmp:
+                res_dict[ID] = d1[int(db_tmp[ID])]
+            else:
+                res_dict[ID] = "Unknown"
+    t11 = datetime.datetime.now()
+    print("used time:", t11 - t00)
     # x = L_time[0]
     # for xx in L_time[1:]:
     #     x += xx
@@ -153,6 +159,13 @@ def blast_res_deal(inblast):
     df_tongji = pd.DataFrame(tongji)
 
     df_tongji.insert(1, "per", tongji / tongji.sum())
+
+    df_tongji2 = df_tongji.copy()
+    df_tongji2["per"] = (df_tongji2["per"]*100).map(lambda x: "%6.3f" % x)
+    df_tongji2.rename({"scientific_name": "num", "per": "%per"},
+                      axis=1, inplace=True)
+    df_tongji2.to_csv(f"{inblast}.HighestScore.Description.xls",
+                      sep="\t", index_label="sep")
 
     df_tongji_other = df_tongji[df_tongji["per"] < 0.01]
     # df_tongji.sum()
