@@ -171,3 +171,6 @@ blast-nt库的构建参考文章:
 
 - [通过 blast 结果查看 测序数据fastq是否被污染，以及污染reads所属物种、所占比例_风风是超人的博客-CSDN博客](https://blog.csdn.net/qq_42962326/article/details/105081327)
 - [使用本地nt数据库对reads和Trinity结果进行blast - 简书](https://www.jianshu.com/p/b8225e806aca)
+
+下一步更新计划：
+- [ ] 编写脚本，一次性将所有要检测的reads的fasata合并起来，然后再一次性进行blast，可以大大减少IO读取量提升速度

@@ -6,14 +6,15 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-05-10, 11:07:39
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-06-29, 17:25:07
+# @ Last Modified: 2021-08-28, 13:43:23
 #############################################
 
 ##########################################################################################
 # Description：将物种对应名的数据库分割，按需读取查找，极大减少资源消耗与读取速度
 #              直接输入 blast f6 结果，脚本将自动筛选第一次出现的最优比对结果，
 #              将ID去判断所属物种，并进行饼图绘制
-# Version： v1.0.0  初版完成
+# Version： v1.1  加入参数可以定义输入的原始reads数量，多余将视为unmap; 规范饼图最多显示条目为7
+# Version History： v1.0  初版完成
 ##########################################################################################
 
 
@@ -25,7 +26,17 @@ import numpy as np
 import pickle
 import gzip
 import os
-import sys
+import argparse
+
+
+def fargv():
+    parser = argparse.ArgumentParser(description='Process introduction.')
+    parser.add_argument('blastfiles', type=str, nargs="+",
+                        help='输入需要统计的 blast 结果')
+    parser.add_argument('-n', '--numrawreads', type=int, default=None,
+                        help='原始的reads数，多余的将视为unmap')
+    args = parser.parse_args()
+    return args
 
 
 pydb = "/home/chenjun/dataBase/blast_db_FASTA/db_NCBI_Taxonomy/pydb"
@@ -128,8 +139,8 @@ def find_spe(IDs):
 # %%
 
 
-def blast_res_deal(inblast):
-    # inblast = "blast_result.blast"
+def blast_res_deal(inblast, numrawreads=None):
+    # inblast = "./test/test.filter.blast"
     names = [
         "Query_id",  # 查询序列ID标识
         "Subject_id",  # 比对上的目标序列ID标识
@@ -154,10 +165,11 @@ def blast_res_deal(inblast):
     df.to_csv(f"{inblast}.HighestScore.xls", sep="\t", index=False)
 
     tongji = df["scientific_name"].value_counts()
+    if numrawreads and tongji.sum() < numrawreads:
+        tongji.loc["unmapped reads"] = numrawreads - tongji.sum()
 
     # tongji.plot(kind="pie")
     df_tongji = pd.DataFrame(tongji)
-
     df_tongji.insert(1, "per", tongji / tongji.sum())
 
     df_tongji2 = df_tongji.copy()
@@ -166,12 +178,24 @@ def blast_res_deal(inblast):
                       axis=1, inplace=True)
     df_tongji2.to_csv(f"{inblast}.HighestScore.Description.xls",
                       sep="\t", index_label="sep")
-
-    df_tongji_other = df_tongji[df_tongji["per"] < 0.01]
-    # df_tongji.sum()
-    df_tongji.drop(df_tongji_other.index, inplace=True)
-
-    df_tongji.loc["Others"] = df_tongji_other.sum()
+    if df_tongji.shape[0] > 6:
+        # other_select = df_tongji["per"] < 0.01
+        other_select = np.array([False]*df_tongji.shape[0])
+        other_select[8:] = True
+        df_tongji_other = df_tongji[other_select]
+        min_num = df_tongji_other.iloc[0, 1]*100
+        min_num = 0.1 if min_num < 0.1 else min_num
+        othersname = "others reads (sum of <%.1f%%)" % min_num
+        # df_tongji_other = df_tongji[tongji <= 2]
+        # df_tongji.sum()
+        if "unmapped reads" in df_tongji_other.index:
+            unmap = df_tongji.loc["unmapped reads"]
+            df_tongji.drop(df_tongji_other.index, inplace=True)
+            df_tongji.loc[othersname] = df_tongji_other.sum()
+            df_tongji.loc["unmapped reads"] = unmap
+        else:
+            df_tongji.drop(df_tongji_other.index, inplace=True)
+            df_tongji.loc[othersname] = df_tongji_other.sum()
     # df_tongji["scientific_name"].plot(kind="pie")
 
     df_tongji["name"] = (
@@ -203,10 +227,18 @@ def plot_pie(data, ingredients, outname):
               fontsize='x-small'
               #   bbox_to_anchor=(0, 0, 0.5, -0.5)
               )
-    # plt.setp(autotexts, size=8, weight="bold")
-    # ax.set_title("Pie chart of NT library.")
+    # plt.setp(outname, size=8)
+    ax.set_title(os.path.basename(outname), size=8, loc="left")
+    # fig.suptitle(os.path.basename(outname), size=8, loc="right")
     # plt.show()
-    plt.savefig(outname, dpi=200, bbox_inches='tight')
+    plt.savefig(outname+".pie.png", dpi=200, bbox_inches='tight')
+
+
+# df_tongji = blast_res_deal("./test/test.filter.blast", 1000)
+# plot_pie(data=df_tongji.scientific_name,
+#          ingredients=df_tongji.name,
+#          outname="./test/test.filter.blast")
+
 # %%
 
 
@@ -297,14 +329,15 @@ else:
 if __name__ == "__main__":
     # inblast = "blast_result.blast"
     # inblast = "/home/chenjun/test/blast/test-fq/9HTF2HZF013-Alignment-HitTable.txt"
-
-    inblast = sys.argv[1]
+    # inblast = sys.argv[1]
     # infaNum = sys.argv[2]
-
-    print("searching...")
-    df_tongji = blast_res_deal(inblast)
-    print("plotting...")
-    plot_pie(data=df_tongji.scientific_name,
-             ingredients=df_tongji.name,
-             outname=inblast+".pie.png")
-    print("Done.")
+    args = fargv()
+    for inblast in args.blastfiles:
+        print(f"\ndeal {inblast}")
+        print("searching...")
+        df_tongji = blast_res_deal(inblast, args.numrawreads)
+        print("plotting...")
+        plot_pie(data=df_tongji.scientific_name,
+                 ingredients=df_tongji.name,
+                 outname=inblast)
+        print("Done.")
