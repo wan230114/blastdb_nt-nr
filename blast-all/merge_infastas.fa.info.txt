@@ -1,0 +1,10 @@
+./f1.fa_1	test 1
+./f1.fa_2	test 2
+./f1.fa_3	test 3
+./f2.fa_1	test 4
+./f2.fa_2	test 5
+./f2.fa_3	test 6
+./f3.fa_1	test 7
+./f3.fa_2	test 8
+./f3.fa_3	test 9
+./f3.fa_4	test 10

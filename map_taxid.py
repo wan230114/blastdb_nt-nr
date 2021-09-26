@@ -6,7 +6,7 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-05-10, 11:07:39
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-08-28, 13:43:23
+# @ Last Modified: 2021-09-18, 11:14:21
 #############################################
 
 ##########################################################################################
@@ -173,11 +173,16 @@ def blast_res_deal(inblast, numrawreads=None):
     df_tongji.insert(1, "per", tongji / tongji.sum())
 
     df_tongji2 = df_tongji.copy()
-    df_tongji2["per"] = (df_tongji2["per"]*100).map(lambda x: "%6.3f" % x)
+    df_tongji2["per"] = (df_tongji2["per"]*100).map(lambda x: round(x, 3))
+    # df_tongji2["per"] = df_tongji2["per"].map(lambda x: "%6.3f" % x)
     df_tongji2.rename({"scientific_name": "num", "per": "%per"},
                       axis=1, inplace=True)
-    df_tongji2.to_csv(f"{inblast}.HighestScore.Description.xls",
-                      sep="\t", index_label="sep")
+    tmp = df_tongji2.copy()
+    tmp.loc["Sum of reads:"] = [tmp["num"].sum(), 100]
+    tmp["num"] = tmp["num"].astype("int")
+    tmp.to_csv(f"{inblast}.HighestScore.Description.xls",
+               sep="\t", index_label="sep")
+    tmp.to_html(f"{inblast}.HighestScore.Description.html")
     if df_tongji.shape[0] > 6:
         # other_select = df_tongji["per"] < 0.01
         other_select = np.array([False]*df_tongji.shape[0])
@@ -231,7 +236,8 @@ def plot_pie(data, ingredients, outname):
     ax.set_title(os.path.basename(outname), size=8, loc="left")
     # fig.suptitle(os.path.basename(outname), size=8, loc="right")
     # plt.show()
-    plt.savefig(outname+".pie.png", dpi=200, bbox_inches='tight')
+    plt.savefig(outname+".HighestScore.Description.pie.png",
+                dpi=200, bbox_inches='tight')
 
 
 # df_tongji = blast_res_deal("./test/test.filter.blast", 1000)

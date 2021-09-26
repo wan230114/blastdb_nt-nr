@@ -4,18 +4,18 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-05-11, 17:40:03
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-08-09, 14:35:16
+# @ Last Modified: 2021-09-18, 12:18:11
 #############################################
 
 fastq=$1  # xxx.fq.gz
 fastq_name=`basename $fastq .gz`
 num=1000
-
+if [ "$2" ]; then num=$2; fi
 source /home/chenjun/.conda_bashrc_my; conda activate nt
 
 date "+%F %T"
-echo step01. filter 1000 reads.
-/home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/get_${num}reads.sh $fastq
+echo step01. filter $num reads.
+/home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/get_1000reads.sh $fastq $num
 
 # 比对
 date "+%F %T"

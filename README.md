@@ -50,6 +50,8 @@ db=$PWD
 # 尽量使用官方源，一般具有更新的环境版本不易出现问题。访问缓慢可借助 proxychains4 解决。
 conda deactivate; conda deactivate;
 conda create  -y  -n nt  -c bioconda  blast libgcc numpy pandas matplotlib seqtk
+conda activate nt
+pip install biopython
 # blast版本地址：<https://ftp.ncbi.nlm.nih.gov/blast/executables/LATEST/>
 # blast使用手册《BLAST Command Line Applications User Manual》
 
@@ -114,7 +116,7 @@ conda activate nt
 
 饼图结果：
 
-![](test/test.blast.pie.png)
+![](test/test.blast.HighestScore.Description.pie.png)
 
 
 ---
@@ -164,6 +166,21 @@ Taxonomy数据库格式说明：
 
 
 ---
+## blast耗时统计
+
+单个blast, 10进程运行测试：
+
+IO读取速度大约在100M/s
+
+|序列数量|耗时|
+|-|-|
+|1000|12min|
+|10000|22min|
+|60000|60min|
+
+平均每增加 10000 条序列，将会增加 10min 运行时间。
+
+---
 ## 参考文档
 
 
@@ -173,4 +190,5 @@ blast-nt库的构建参考文章:
 - [使用本地nt数据库对reads和Trinity结果进行blast - 简书](https://www.jianshu.com/p/b8225e806aca)
 
 下一步更新计划：
-- [ ] 编写脚本，一次性将所有要检测的reads的fasata合并起来，然后再一次性进行blast，可以大大减少IO读取量提升速度
+- [x] 编写脚本，一次性将所有要检测的reads的fasata合并起来，然后再一次性进行blast，可以大大减少IO读取量提升速度
+- [ ] 整理安装方法，去除绝对路径，整合代码以供任何人轻易使用
