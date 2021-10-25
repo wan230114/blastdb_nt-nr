@@ -4,7 +4,7 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-09-09, 17:55:51
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-09-18, 14:52:49
+# @ Last Modified: 2021-10-21, 09:19:28
 #############################################
 
 while getopts ":i::n:" opt; do
@@ -31,7 +31,7 @@ else
     echo "Usage: sh xxx.sh  -i f1.fq.gz [f2.fq.gz ...]  [-n <int>]"
     exit 1
 fi
-if [ "$num" ]; then num=1000; fi
+if [ "$num" ]; then echo -n ; else num=1000; fi
 
 echo num: $num
 
