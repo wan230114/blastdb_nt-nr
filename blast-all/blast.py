@@ -51,7 +51,7 @@ print(CMD)
 os.system(CMD)
 t1 = dt.now()
 print("end blast", t1)
-print("耗时:", t1 - t0)
+print("Time used:", t1 - t0)
 
 # %%
 

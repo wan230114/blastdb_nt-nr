@@ -6,19 +6,22 @@
 项目简介：
 
 - 建立本地 blast nt 数据库，进行随机抽取1000条reads，进行nt比对统计物种的含量并绘制饼图。
+- 优化blast比对效率，即合并所有输入fasta，一次性读取数据库比对，最后对于blast结果分割
 - 该项目主要奉献了脚本用于nt数据库id查找名的优化，为遍历大文件查找提供了一种最有效率的方式。
 - 实现思想：将大文件先排序，然后分割成各个小文件库，在查找时，按照一定规律按需去导入各个小文件库进行查找，从而大大降低资源消耗。
 
 
-测试效果：
+
+map_taxid 测试效果：
 
 ```bash
-
+# 搜索效率大大提升，并附带各类统计及绘图功能
 time ./map_taxid.py ./test/test.blast
 # real    0m12.926s
 # user    0m9.968s
 # sys     0m2.923s
 
+# 而使用 linux awk 去搜索
 time {
     db=/home/chenjun/dataBase/blast_db_FASTA/
     cat test.blast | sort -k1,1 -u >test.filter.blast
@@ -33,6 +36,31 @@ time {
 # user    1m20.908s
 # sys     0m0.939s
 ```
+
+
+多个fasta的blast比对效率测试效果：
+
+```bash
+# 优化后，30000条reads * 1个文件, 用blast与NT库比对一共耗时约30余分钟
+blastn -query merge_infastas.fa -out merge_infastas.fa.blast -outfmt 6 -db /home/chenjun/dataBase/blast_db_FASTA/nt -num_threads 10 -num_alignments 5
+# 0:34:41.519622
+
+# 优化前，10000条reads * 3个文件, 用blast与NT库比对一共耗时约90余分钟
+blastn -query 10000reads_demo1.fasta -out 10000reads_demo1.fasta.blast -outfmt 6 -db /home/chenjun/dataBase/blast_db_FASTA/nt -num_threads 10 -num_alignments 5
+# real    27m12.249s
+# user    56m57.813s
+# sys     3m49.708s
+blastn -query 10000reads_demo2.fasta -out 10000reads_demo2.fasta.blast -outfmt 6 -db /home/chenjun/dataBase/blast_db_FASTA/nt -num_threads 10 -num_alignments 5
+# real    32m1.481s
+# user    86m28.424s
+# sys     4m31.387s
+blastn -query 10000reads_demo3.fasta -out 10000reads_demo3.fasta.blast -outfmt 6 -db /home/chenjun/dataBase/blast_db_FASTA/nt -num_threads 10 -num_alignments 5
+# real    38m15.928s
+# user    83m30.482s
+# sys     4m26.641s
+```
+
+- 时间有限，在IO吞吐量方面未记录数据。但是一个NT库本地大小为120G左右，分开3次跑和1次跑的最大区别就在于，后者只读取了一次NT库，因此合并fasta再跑速度提升的根本在于优化了IO读取量。
 
 
 ---
@@ -82,7 +110,7 @@ sed -i "s#/home/chenjun/dataBase/blast_db_FASTA#$db#"  map_taxid.py
 python3  map_taxid.py  test/test.blast
 ```
 
-
+---
 ## Demo：
 
 分步执行：
@@ -107,11 +135,15 @@ time blastn -query $fasta -out $out -outfmt 6 -db $db -num_threads 10 -evalue 1e
 time python3 map_taxid.py $out
 ```
 
-一步执行：
+
+一步执行：【流程中使用的关键脚本！！！】
 
 ```bash
 conda activate nt
+# 早期版本只能一个一个fasta做。（可忽略了）
 ./fq-nt-check.sh  ./test.fq.gz
+# 后期版本能同时多个fasta做，并可指定随机挑选reads条数。（推荐）
+./fq-nt-checks.sh -i ./test1.fq.gz ./test2.fq.gz ./test3.fq.gz -n 10000
 ```
 
 饼图结果：
