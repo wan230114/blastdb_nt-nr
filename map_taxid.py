@@ -1,4 +1,4 @@
-#!/home/chenjun/software/linux_tools/miniconda3/envs/dev/bin/python3.8
+#!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 
 #############################################
@@ -6,15 +6,17 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-05-10, 11:07:39
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-09-18, 11:14:21
+# @ Last Modified: 2021-12-31, 15:03:32
 #############################################
 
 ##########################################################################################
 # Description：将物种对应名的数据库分割，按需读取查找，极大减少资源消耗与读取速度
 #              直接输入 blast f6 结果，脚本将自动筛选第一次出现的最优比对结果，
 #              将ID去判断所属物种，并进行饼图绘制
-# Version： v1.1  加入参数可以定义输入的原始reads数量，多余将视为unmap; 规范饼图最多显示条目为7
-# Version History： v1.0  初版完成
+# Version： v1.2  修复比对到的物种数量较少时报错的BUG
+# Version History：
+#   v1.0  初版完成
+#   v1.1  加入参数可以定义输入的原始reads数量，多余将视为unmap; 规范饼图最多显示条目为7
 ##########################################################################################
 
 
@@ -119,7 +121,11 @@ def find_spe(IDs):
     for kw in db_select:
         print(f"search in {kw}", end="  ")
         t0 = datetime.datetime.now()
-        db_tmp = pickle_load(f"{pydb}/%s.pydb.gz" % kw)
+        try:
+            db_tmp = pickle_load(f"{pydb}/%s.pydb.gz" % kw)
+        except FileNotFoundError:
+            print(f"  ---  Warning: {pydb}/%s.pydb.gz" % kw, "not found. this ID not mapped:", db_select[kw])
+            db_tmp = {}
         t1 = datetime.datetime.now()
         print(t1 - t0)
         # L_time.append(t1 - t0)
@@ -183,7 +189,7 @@ def blast_res_deal(inblast, numrawreads=None):
     tmp.to_csv(f"{inblast}.HighestScore.Description.xls",
                sep="\t", index_label="sep")
     tmp.to_html(f"{inblast}.HighestScore.Description.html")
-    if df_tongji.shape[0] > 6:
+    if df_tongji.shape[0] > 8:
         # other_select = df_tongji["per"] < 0.01
         other_select = np.array([False]*df_tongji.shape[0])
         other_select[8:] = True
@@ -337,6 +343,7 @@ if __name__ == "__main__":
     # inblast = "/home/chenjun/test/blast/test-fq/9HTF2HZF013-Alignment-HitTable.txt"
     # inblast = sys.argv[1]
     # infaNum = sys.argv[2]
+    # sys.argv = ["", "1000reads_KO-C-Jun-k27me3.rep2.chip.ip_R1.fasta.blast"]
     args = fargv()
     for inblast in args.blastfiles:
         print(f"\ndeal {inblast}")

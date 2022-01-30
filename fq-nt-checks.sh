@@ -4,12 +4,18 @@
 # @ Author Email: 1170101471@qq.com
 # @ Created Date: 2021-09-09, 17:55:51
 # @ Modified By: Chen Jun
-# @ Last Modified: 2021-10-21, 09:19:28
+# @ Last Modified: 2021-10-29, 11:17:03
 #############################################
 
-while getopts ":i::n:" opt; do
+Usage="Usage: sh xxx.sh  -i f1.fq.gz [f2.fq.gz ...]  [-n <int>] [-r]"
+
+num=1000
+rnaseq=false
+
+while getopts ":i::n:r" opt; do
     case $opt in
     n) num=$OPTARG ;;
+    r) rnaseq=true ;;
     i)
         infqs=("$OPTARG")
         until [[ $(eval "echo \${$OPTIND}") =~ ^-.* ]] || [ -z $(eval "echo \${$OPTIND}") ]; do
@@ -18,7 +24,7 @@ while getopts ":i::n:" opt; do
         done
         ;;
     *)
-        echo "Usage: sh xxx.sh  -i f1.fq.gz [f2.fq.gz ...]  -n <int>"
+        echo $Usage
         exit 1
         ;;
     esac
@@ -28,12 +34,12 @@ done
 if [ "${infqs}" ]; then
     echo infqs: ${infqs[@]}
 else
-    echo "Usage: sh xxx.sh  -i f1.fq.gz [f2.fq.gz ...]  [-n <int>]"
+    echo $Usage
     exit 1
 fi
-if [ "$num" ]; then echo -n ; else num=1000; fi
 
 echo num: $num
+echo rna: $rnaseq
 
 
 #############################################
@@ -57,8 +63,13 @@ echo $fas
 date "+%F %T"
 echo step02. blast.
 
-echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas
-echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas | sh
+if $rnaseq; then
+    echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas -r
+    echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas -r| sh
+else
+    echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas
+    echo /home/chenjun/pipeline/others/dataBase/blastdb_nt-nr/blast-all/blast.py $fas | sh
+fi
 
 #############################################
 # 统计, plot
